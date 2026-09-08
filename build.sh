@@ -13,7 +13,7 @@ if [[ "$SRC" =~ ^(https?://|git@|ssh://) ]]; then
   TMP="$(mktemp -d)"
   trap 'rm -rf "$TMP"' EXIT
   echo "==> 克隆 $SRC"
-  git clone --depth 1 "$SRC" "$TMP/project"
+  git clone --depth 1 --shallow-submodules --recurse-submodules --jobs 4 "$SRC" "$TMP/project"
   PROJECT="$TMP/project"
 else
   PROJECT="$SRC"
