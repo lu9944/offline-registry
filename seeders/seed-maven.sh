@@ -21,18 +21,30 @@ if [ "${#POMS[@]}" -eq 0 ] && [ -z "$GRADLE" ]; then
 fi
 
 if [ -z "$GRADLE" ] && [ "${#POMS[@]}" -gt 0 ]; then
-    echo "==> [Maven] 检测到 ${#POMS[@]} 个 pom.xml，开始下载依赖到 $REPO"
+    # reactor 根 = 没有其他 pom 作为祖先的 pom；子模块的依赖由其根统一 go-offline + install 覆盖
+    ROOTS=()
     for pom in ${POMS[@]+"${POMS[@]}"}; do
+        dir="$(dirname "$pom")"
+        covered=0
+        for other in ${POMS[@]+"${POMS[@]}"}; do
+            odir="$(dirname "$other")"
+            [ "$odir" = "$dir" ] && continue
+            case "$dir/" in "$odir"/*) covered=1; break;; esac
+        done
+        [ "$covered" -eq 0 ] && ROOTS+=("$pom")
+    done
+
+    echo "==> [Maven] 检测到 ${#POMS[@]} 个 pom.xml（${#ROOTS[@]} 个 reactor 根），开始下载依赖到 $REPO"
+    for pom in ${ROOTS[@]+"${ROOTS[@]}"}; do
         sub="$(realpath --relative-to="$PROJECT" "$(dirname "$pom")")"
         echo "==> [Maven] dependency:go-offline: ${sub}"
         mvn -q -f "$pom" -Dmaven.repo.local="$REPO" -Dmaven.test.skip=true dependency:go-offline "$@" || \
             echo "WARN: ${sub} 依赖下载失败，已保留已下载部分"
+        # 真实构建：把 reactor 内部构件装入离线仓库，子模块互为依赖才能解析
+        echo "==> [Maven] clean install: ${sub}"
+        mvn -q -f "$pom" -Dmaven.repo.local="$REPO" -Dmaven.test.skip=true clean install "$@" || \
+            echo "WARN: ${sub} 完整构建失败，已保留已下载依赖（某些项目需额外 profile/参数）"
     done
-    # 根工程真实构建以抓取全部插件
-    if [ -f "$PROJECT/pom.xml" ]; then
-        mvn -q -f "$PROJECT/pom.xml" -Dmaven.repo.local="$REPO" -Dmaven.test.skip=true clean install "$@" || \
-            echo "WARN: 完整构建失败，已保留已下载依赖（某些项目需额外 profile/参数）"
-    fi
 elif [ -n "$GRADLE" ]; then
     echo "==> [Maven] 检测到 Gradle 工程（Gradle 依赖走 Gradle 缓存，暂不纳入离线源）"
     echo "    提示: 本项目使用 Gradle，offline-registry 当前仅支持 Maven 工程的 Java 离线源。"

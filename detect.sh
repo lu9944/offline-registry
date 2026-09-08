@@ -26,5 +26,9 @@ fi
 if find "$PROJECT" \( "${PRUNE[@]}" \) -prune -o -type f -name Cargo.toml -print 2>/dev/null | grep -q .; then
   DETECTED="$DETECTED cargo"
 fi
+# Python (pip): requirements*.txt / pyproject.toml / setup.py
+if find "$PROJECT" \( "${PRUNE[@]}" \) -prune -o -type f \( -name 'requirements*.txt' -o -name pyproject.toml -o -name setup.py \) -print 2>/dev/null | grep -q .; then
+  DETECTED="$DETECTED pip"
+fi
 
 echo "$DETECTED" | xargs

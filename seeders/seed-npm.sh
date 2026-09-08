@@ -40,7 +40,9 @@ for dir in ${NPM_PROJECTS[@]+"${NPM_PROJECTS[@]}"}; do
   (cd "$(dirname "$dir")" \
     && rm -rf node_modules package-lock.json \
     && npm install --registry "$REG" --no-audit --no-fund) \
-    || echo "WARN: ${sub} npm install 失败，已保留已缓存部分"
+    || (cd "$(dirname "$dir")" \
+        && npm install --registry "$REG" --no-audit --no-fund --legacy-peer-deps) \
+    || echo "WARN: ${sub} npm install 失败（含 --legacy-peer-deps 回退），已保留已缓存部分"
 done
 
 echo "==> [npm] 完成: $(du -sh "$STORAGE" | cut -f1)"

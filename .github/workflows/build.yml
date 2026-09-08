@@ -39,6 +39,11 @@ jobs:
       - name: Set up Rust (Cargo)
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Set up Python (pip)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
       - name: 播种离线依赖数据
         env:
           PACK_TARBALL: '1'

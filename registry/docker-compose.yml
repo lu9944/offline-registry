@@ -12,4 +12,5 @@ services:
       - ./data/go:/data/go
       - ./data/node-dist:/data/node-dist
       - ./data/cargo:/data/cargo
+      - ./data/pip:/data/pip
       - ./data/verdaccio-storage:/opt/verdaccio/storage

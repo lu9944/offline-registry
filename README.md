@@ -18,6 +18,7 @@ Maven / npm / Go / Cargo 的依赖，生成一份「离线数据包」；配合�
 | Node.js | `package.json` | Verdaccio 缓存 | npm registry |
 | Go | `go.mod` | Go module proxy（GOMODCACHE cache/download） | `GOPROXY` |
 | Rust | `Cargo.toml` | `cargo vendor` 离线源 | `.cargo/config.toml` replace-with |
+| Python (pip) | `requirements*.txt` / `pyproject.toml` | wheelhouse + find-links | `pip install --find-links` |
 
 > 说明：Rust 没有内建「远程 proxy 下载源」协议，离线构建的标准做法是 `cargo vendor`
 > 生成 `vendored-sources` 替换源，本工具按该方式产出并附配置模板。
@@ -69,6 +70,7 @@ docker run -d --name offline-registry -p 8081:8081 -p 4873:4873 \
   -v "$PWD/data/go:/data/go" \
   -v "$PWD/data/node-dist:/data/node-dist" \
   -v "$PWD/data/cargo:/data/cargo" \
+  -v "$PWD/data/pip:/data/pip" \
   -v "$PWD/data/verdaccio-storage:/opt/verdaccio/storage" \
   ghcr.io/<你的账号>/offline-registry:latest
 ```
@@ -113,6 +115,14 @@ replace-with = "vendored-sources"
 
 [source.vendored-sources]
 directory = "<vendor 绝对路径>"
+```
+
+### 6. Python (pip)
+
+```bash
+pip install -r requirements.txt \
+  --find-links http://<IP>:8081/pip/wheels \
+  --no-index --trusted-host <IP>
 ```
 
 ## 批量提交多个项目
