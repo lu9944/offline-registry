@@ -21,6 +21,11 @@ Maven / npm / Go / Cargo 的依赖，生成一份「离线数据包」；配合�
 
 > 说明：Rust 没有内建「远程 proxy 下载源」协议，离线构建的标准做法是 `cargo vendor`
 > 生成 `vendored-sources` 替换源，本工具按该方式产出并附配置模板。
+>
+> **monorepo 支持**：探测与播种均递归扫描子目录（自动排除 `node_modules`、`vendor`、`target` 等），
+> 项目根没有清单文件、只有嵌套子工程也能识别。
+> **分包机制**：数据包超过 1.8GB 会自动 `split` 分卷上传（GitHub Release 单文件上限 2GB），
+> 还原命令见 Release 内 `data-package.README.txt`。
 
 ## 快速开始
 
@@ -32,6 +37,10 @@ Maven / npm / Go / Cargo 的依赖，生成一份「离线数据包」；配合�
 4. 工作流完成后：
    - **通用服务镜像** → 推送到 `ghcr.io/<你的账号>/offline-registry:latest`
    - **离线数据包** → 自动创建一个 Release，内含 `data-package.tar.gz`
+     （超限时为多个 `.part-*` 分卷文件，还原方法见 `data-package.README.txt`）
+
+> 克隆**私有仓库**：先在 fork 仓库的 Settings → Secrets and variables → Actions 添加
+> secret `REPO_TOKEN`（需对该私有仓库有读权限的 PAT），工作流会自动用它克隆。
 
 ### 方式 B：本地手动构建（调试）
 
@@ -51,6 +60,7 @@ docker build -t offline-registry:local registry/
 docker pull ghcr.io/<你的账号>/offline-registry:latest
 
 # 下载 Release 里的 data-package.tar.gz，解压出 ./data 目录
+# （若 Release 内是 .part-* 分卷，先拼接：cat data-package.tar.gz.part-* > data-package.tar.gz）
 mkdir -p data && tar -xzf data-package.tar.gz -C data
 
 # 启动（建议用仓库里的 registry/docker-compose.yml，或直接）：

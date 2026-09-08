@@ -5,15 +5,18 @@ set -euo pipefail
 
 PROJECT="${1:?项目目录必填}"
 OUT="${2:?输出根目录必填}"
-[ -f "$PROJECT/go.mod" ] || { echo "==> [go] 未检测到 go.mod，跳过"; exit 0; }
 
 GOMODCACHE_STAGE="$OUT/.gomodcache"
 mkdir -p "$GOMODCACHE_STAGE"
 
 echo "==> [go] 检测到 Go 工程，go mod download ..."
-# 多模块场景：遍历项目内所有 go.mod
+# 多模块场景（含 monorepo 子目录）：遍历项目内所有 go.mod
 mapfile -t MODULES < <(find "$PROJECT" -name go.mod -not -path "*/vendor/*" | sort)
-for mod in "${MODULES[@]}"; do
+if [ "${#MODULES[@]}" -eq 0 ]; then
+  echo "==> [go] 未检测到 go.mod，跳过"
+  exit 0
+fi
+for mod in ${MODULES[@]+"${MODULES[@]}"}; do
   dir="$(dirname "$mod")"
   echo "==> [go] 下载依赖: ${dir#$PROJECT/}"
   (cd "$dir" && GOMODCACHE="$GOMODCACHE_STAGE" GOFLAGS=-mod=mod go mod download) || \

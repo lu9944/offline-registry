@@ -42,9 +42,9 @@ jobs:
       - name: 播种离线依赖数据
         env:
           PACK_TARBALL: '1'
+          REPO_TOKEN: ${{ secrets.REPO_TOKEN }}   # 可选：克隆私有仓库用
         run: |
           bash build.sh "${{ github.event.inputs.repo_url }}" "$GITHUB_WORKSPACE/data"
-          cp offline-registry-data.tar.gz "$GITHUB_WORKSPACE/data-package.tar.gz"
 
       - name: 构建并推送通用服务镜像到 GHCR
         env:
@@ -62,10 +62,11 @@ jobs:
           if [ -z "$TAG" ]; then
             TAG="offline-registry-$(date +%Y%m%d-%H%M%S)"
           fi
-          gh release create "$TAG" \
-            "$GITHUB_WORKSPACE/data-package.tar.gz" \
+          ls data-package* >/dev/null
+          gh release create "$TAG" data-package* \
             --repo "${{ github.repository }}" \
             --title "离线数据包: ${{ github.event.inputs.repo_url }}" \
             --notes "项目: ${{ github.event.inputs.repo_url }}
-            通用镜像: ghcr.io/${{ github.repository_owner }}/offline-registry:latest
-            用法见仓库 README。" || true
+          通用镜像: ghcr.io/${{ github.repository_owner }}/offline-registry:latest
+          若包含 .part-* 分卷文件，还原方法见 data-package.README.txt。
+          用法见仓库 README。"
