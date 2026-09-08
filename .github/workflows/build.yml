@@ -67,5 +67,5 @@ jobs:
             --repo "${{ github.repository }}" \
             --title "离线数据包: ${{ github.event.inputs.repo_url }}" \
             --notes "项目: ${{ github.event.inputs.repo_url }}
-通用镜像: ghcr.io/${{ github.repository_owner }}/offline-registry:latest
-用法见仓库 README。" || true
+            通用镜像: ghcr.io/${{ github.repository_owner }}/offline-registry:latest
+            用法见仓库 README。" || true
