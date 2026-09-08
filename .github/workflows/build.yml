@@ -1,0 +1,71 @@
+name: build-offline-registry
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo_url:
+        description: '开源项目 GitHub 地址（如 https://github.com/owner/repo）'
+        required: true
+      tag:
+        description: '数据包 Release 标签（可选，默认 offline-registry-<时间戳>）'
+        required: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write        # 创建 Release / 上传数据包
+      packages: write        # 推送通用镜像到 GHCR
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21 (Maven)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Node 23 (npm)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '23'
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+
+      - name: Set up Rust (Cargo)
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: 播种离线依赖数据
+        env:
+          PACK_TARBALL: '1'
+        run: |
+          bash build.sh "${{ github.event.inputs.repo_url }}" "$GITHUB_WORKSPACE/data"
+          cp offline-registry-data.tar.gz "$GITHUB_WORKSPACE/data-package.tar.gz"
+
+      - name: 构建并推送通用服务镜像到 GHCR
+        env:
+          IMAGE: ghcr.io/${{ github.repository_owner }}/offline-registry:latest
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          docker build -t "$IMAGE" registry/
+          docker push "$IMAGE"
+
+      - name: 发布数据包 Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ github.event.inputs.tag }}"
+          if [ -z "$TAG" ]; then
+            TAG="offline-registry-$(date +%Y%m%d-%H%M%S)"
+          fi
+          gh release create "$TAG" \
+            "$GITHUB_WORKSPACE/data-package.tar.gz" \
+            --repo "${{ github.repository }}" \
+            --title "离线数据包: ${{ github.event.inputs.repo_url }}" \
+            --notes "项目: ${{ github.event.inputs.repo_url }}
+通用镜像: ghcr.io/${{ github.repository_owner }}/offline-registry:latest
+用法见仓库 README。" || true

@@ -1,0 +1,40 @@
+# 播种期配置（CI/本地联网机临时 Verdaccio 容器使用，带 npmmirror 上游）
+storage: /verdaccio/storage
+
+web:
+  title: offline-registry Seed NPM
+
+auth:
+  htpasswd:
+    file: /verdaccio/storage/htpasswd
+    max_users: -1
+
+uplinks:
+  npmmirror:
+    url: https://registry.npmmirror.com/
+    timeout: 120s
+    maxage: 10m
+    cache: true
+
+packages:
+  '@*/*':
+    access: $all
+    publish: $authenticated
+    unpublish: $authenticated
+    proxy: npmmirror
+  '**':
+    access: $all
+    publish: $authenticated
+    unpublish: $authenticated
+    proxy: npmmirror
+
+middlewares:
+  audit:
+    enabled: true
+
+log:
+  type: stdout
+  format: pretty
+  level: http
+
+listen: 0.0.0.0:4873

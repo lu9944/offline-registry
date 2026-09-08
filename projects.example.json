@@ -1,0 +1,6 @@
+{
+  "projects": [
+    "https://github.com/dataease/dataease",
+    "https://github.com/gin-gonic/gin"
+  ]
+}

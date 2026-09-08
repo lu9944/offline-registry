@@ -1,0 +1,27 @@
+# 离线期配置（通用镜像默认，无上游，纯缓存只读）
+storage: /opt/verdaccio/storage
+
+web:
+  title: offline-registry NPM
+
+auth:
+  htpasswd:
+    file: /opt/verdaccio/storage/htpasswd
+    max_users: -1
+
+packages:
+  '@*/*':
+    access: $all
+    publish: $authenticated
+    unpublish: $authenticated
+  '**':
+    access: $all
+    publish: $authenticated
+    unpublish: $authenticated
+
+log:
+  type: stdout
+  format: pretty
+  level: http
+
+listen: 0.0.0.0:4873

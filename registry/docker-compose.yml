@@ -1,0 +1,15 @@
+services:
+  offline-registry:
+    image: ghcr.io/OWNER/offline-registry:latest
+    container_name: offline-registry
+    ports:
+      - "8081:8081"   # Maven + Go + Node + Cargo
+      - "4873:4873"   # npm (Verdaccio)
+    restart: unless-stopped
+    volumes:
+      # 把 Actions 产出的数据包解压到 ./data 后挂载
+      - ./data/maven:/data/maven
+      - ./data/go:/data/go
+      - ./data/node-dist:/data/node-dist
+      - ./data/cargo:/data/cargo
+      - ./data/verdaccio-storage:/opt/verdaccio/storage
